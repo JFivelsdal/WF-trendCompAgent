@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report | WF-trendCompAgent</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="viewer">
+<div class="topbar">
+  <a class="back" href="index.html">&larr; All outputs</a>
+  <h1 id="title">Loading…</h1>
+  <div class="actions">
+    <a class="btn" id="wfLink" href="#" hidden>See how it was built</a>
+    <a class="btn" id="openLink" href="#" target="_blank" rel="noopener" hidden>Open full page</a>
+  </div>
+</div>
+<iframe class="frame" id="frame" title="Report"></iframe>
+<script src="data.js"></script>
+<script>
+const item = HUB.find(new URLSearchParams(location.search).get('id'));
+if (!item || !HUB.reports.includes(item)) {
+  document.getElementById('title').textContent = 'Report not found';
+  document.getElementById('frame').srcdoc = '<p style="font-family:sans-serif;padding:2rem">That report is not in the list. Go back to the hub and pick one.</p>';
+} else {
+  document.title = item.title + ' | WF-trendCompAgent';
+  document.getElementById('title').textContent = item.title;
+  document.getElementById('frame').src = item.file;
+  const open = document.getElementById('openLink'); open.href = item.file; open.hidden = false;
+  if (item.related && HUB.find(item.related)) {
+    const w = document.getElementById('wfLink'); w.href = 'workflow.html?id=' + encodeURIComponent(item.related); w.hidden = false;
+  }
+}
+</script>
+</body>
+</html>

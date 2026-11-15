@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Insights & Content Report | Wayfair Outdoor Rug</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #7B2D8E 0%, #5E1A6E 100%); color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px; }
+    .header h1 { font-size: 2.2em; margin-bottom: 10px; }
+    .header .subtitle { font-size: 1.2em; opacity: 0.9; }
+    .header .meta { margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap; }
+    .header .meta-item { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; font-size: 0.9em; }
+    .section { background: white; border-radius: 12px; padding: 30px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .section h2 { color: #7B2D8E; font-size: 1.5em; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f0e6f4; }
+    .exec-summary { background: linear-gradient(135deg, #f8f4fa 0%, #fff 100%); border-left: 4px solid #7B2D8E; }
+    .exec-summary p { font-size: 1.05em; margin-bottom: 15px; white-space: pre-line; }
+    .key-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+    .insight-card { background: white; border: 1px solid #e0d4e6; border-radius: 8px; padding: 20px; text-align: center; }
+    .insight-card .number { font-size: 2.2em; font-weight: bold; color: #7B2D8E; }
+    .insight-card .label { font-size: 0.85em; color: #666; margin-top: 5px; }
+    .data-sources { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .data-source-card { background: #f8f9fa; border-radius: 8px; padding: 20px; }
+    .data-source-card h4 { color: #7B2D8E; margin-bottom: 12px; }
+    .data-source-card ul { list-style: none; padding-left: 0; }
+    .data-source-card li { padding: 8px 0; border-bottom: 1px solid #e9ecef; font-size: 0.95em; }
+    .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+    .content-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; }
+    .content-card-header { background: linear-gradient(135deg, #7B2D8E 0%, #9B4DB8 100%); color: white; padding: 15px 20px; }
+    .content-card-body { padding: 20px; }
+    .data-tag { display: inline-block; background: #f0e6f4; color: #7B2D8E; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; margin-bottom: 10px; }
+    .social-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+    .social-post { background: #f8f9fa; border-radius: 8px; padding: 15px; }
+    .platform-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; color: white; margin-bottom: 10px; }
+    .platform-badge.ig { background: linear-gradient(45deg, #f09433, #dc2743); }
+    .platform-badge.pin { background: #E60023; }
+    .platform-badge.fb { background: #1877F2; }
+    .platform-badge.tt { background: #000; }
+    .campaign-card { background: linear-gradient(135deg, #f8f4fa 0%, #fff 100%); border: 1px solid #e0d4e6; border-radius: 10px; padding: 25px; margin-bottom: 20px; }
+    .campaign-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .campaign-detail { background: white; padding: 15px; border-radius: 8px; }
+    .email-ideas { display: flex; flex-direction: column; gap: 10px; }
+    .email-subject { display: flex; align-items: center; gap: 15px; background: #f8f9fa; padding: 15px 20px; border-radius: 8px; }
+    .email-subject .open-rate { background: #e0f2e9; color: #059669; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; }
+    .competitive-angle { background: #f8f9fa; border-left: 4px solid #7B2D8E; padding: 20px; margin-bottom: 15px; }
+    .recommendation { display: flex; gap: 20px; margin-bottom: 15px; align-items: flex-start; }
+    .priority { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; background: #7B2D8E; }
+    .recommendation-content { flex: 1; background: #f8f9fa; padding: 15px 20px; border-radius: 8px; }
+    .footer { background: #5E1A6E; color: white; padding: 30px; border-radius: 12px; text-align: center; margin-top: 30px; }
+    .src-ref { font-size: 0.8em; color: #7B2D8E; margin-top: 10px; }
+    .data-tag.conf-reported { background: #e0f2e9; color: #059669; }
+    .data-tag.conf-inferred { background: #fff4d6; color: #9a6700; }
+    .content-card-body p { margin-bottom: 8px; }
+    .caveats { background: #fffaf0; border-left: 4px solid #f0a500; }
+    .caveats ul { padding-left: 20px; margin-bottom: 12px; }
+    .caveats li { margin-bottom: 6px; }
+    .caveats h4 { margin: 12px 0 6px; color: #9a6700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>AI Insights & Content Report</h1>
+      <p class="subtitle">Wayfair Outdoor Rug</p>
+      <div class="meta">
+        <span class="meta-item">📅 November 15, 2026</span>
+        <span class="meta-item">📊 4 Key Data Points</span>
+        <span class="meta-item">💡 5 Content Ideas</span>
+        <span class="meta-item">🎯 3 Campaigns</span>
+      </div>
+    </header>
+    
+    <section class="section exec-summary">
+      <h2>📋 Executive Summary</h2>
+      <p>The market strongly favors durable, neutral, and earthy textures like Sand/Beige/Brown, with Polypropylene dominating the material choice, supporting P2's $34-$72 mid-range. 
+Competitor analysis shows Wayfair's advantage in design quality over Amazon's $19.88-$98.59 low-cost focus, allowing us to target the P3's $100-$250 gap.</p>
+      <div class="key-insights">
+  <div class="insight-card">
+    <div class="number">5'x8'</div>
+    <div class="label">Most common rug size, 50% of sampled products · P2: Category Deep Dive</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="number">Brown</div>
+    <div class="label">Color distribution, 50.0% of products · P2: Product Attribute Analysis</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="number">4.65 / 5 stars</div>
+    <div class="label">Wayfair average rating · P3: Side-by-Side Comparison</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="number">$43.38</div>
+    <div class="label">Walmart average price · P3: Side-by-Side Comparison</div>
+  </div>
+</div>
+    </section>
+    
+    <section class="section">
+      <h2>📊 Data Foundation</h2>
+      <p>Key insights extracted from your reports:</p>
+      <div class="data-sources">
+        <div class="data-source-card">
+          <h4>📈 From Market Analysis (P2)</h4>
+          <ul><li>The market strongly pivots toward durable, neutral, and earthy textures (Sand/Beige/Brown) supporting 'Modern Desert' and 'Coastal Relaxed' aesthetics.</li><li>Polypropylene is the dominant material at 100.0%, favored for its durability and affordability.</li><li>The 'Modern Desert Neutral' and 'Coastal Relaxed Stripe' are leading micro-segments.</li><li>Sustainability (Recycled PET) is a key driver supporting P2's $34-$72 mid-range pricing.</li></ul>
+        </div>
+        <div class="data-source-card">
+          <h4>🔍 From Competitor Analysis (P3)</h4>
+          <ul><li>Wayfair maintains an advantage in perceived quality and design sophistication over Amazon and Walmart.</li><li>Wayfair spans high-end ($248.99) to budget ($31.99), while Amazon and Walmart are skewed toward low-cost plastic/polypropylene mats ($19.88 - $98.59).</li><li>Wayfair boasts the highest average rating (4.65 / 5 stars) in sampled products.</li><li>There is a significant whitespace opportunity in the $100-$250 range, where competitors have little presence.</li></ul>
+        </div>
+      </div>
+    </section>
+    
+    
+    <section class="section">
+      <h2>💲 Price & Whitespace Opportunities</h2>
+      <div class="content-grid">
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Opportunity:</strong> Increase SKU depth in the $100-$250 range on Amazon and Walmart.</p><p><strong>Price band:</strong> P3: $100-$250</p><p><strong>Evidence:</strong> Wayfair has 4 products in this range while Amazon has 1 and Walmart has 0.</p><p><strong>Content angle:</strong> Focus on high-review, design-focused items to challenge low-tier price wars.</p>
+          <div class="src-ref">📎 P3: Whitespace Analysis</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Opportunity:</strong> Introduce high-quality rugs above $300 to capture high AOV.</p><p><strong>Price band:</strong> P3: $300+</p><p><strong>Evidence:</strong> All three major retailers currently show zero competition in the premium segment.</p><p><strong>Content angle:</strong> Develop a distinct, high-quality collection to cement high-end design positioning.</p>
+          <div class="src-ref">📎 P3: Whitespace Analysis</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Opportunity:</strong> Target Walmart's zero presence in the $100-$300 band.</p><p><strong>Price band:</strong> P3: $100-$300</p><p><strong>Evidence:</strong> Walmart has zero products in the $100-$300 band, while Wayfair has 6 products in the mid-range.</p><p><strong>Content angle:</strong> Introduce curated, high-design items to elevate Walmart's offering beyond utility mats.</p>
+          <div class="src-ref">📎 P3: Whitespace Analysis</div>
+        </div></div>
+      </div>
+    </section>
+    
+    <section class="section">
+      <h2>📈 Trend Outlook</h2>
+      <div class="content-grid">
+        <div class="content-card"><div class="content-card-body">
+          <div class="data-tag conf-reported">Reported</div>
+          <p><strong>Trend:</strong> Modern Desert Neutral aesthetic</p><p><strong>Evidence:</strong> The market is strongly pivoting toward durable, neutral, and earthy textures like Sand/Beige/Brown.</p><p><strong>What to publish:</strong> Prioritize inventory and marketing spend on Beige/Sand/Brown flatweave options.</p>
+          <div class="src-ref">📎 P2: Trending Micro-Segments</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          <div class="data-tag conf-reported">Reported</div>
+          <p><strong>Trend:</strong> Sustainability via Recycled PET</p><p><strong>Evidence:</strong> Sustainability is a key driver, with eco-friendly and recycled materials accounting for 30% of new product launches.</p><p><strong>What to publish:</strong> Integrate certified recycled content to appeal to eco-conscious buyers.</p>
+          <div class="src-ref">📎 P2: Market Data &amp; Forecasts</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          <div class="data-tag conf-reported">Reported</div>
+          <p><strong>Trend:</strong> 5'x8' size demand</p><p><strong>Evidence:</strong> The 5'x8' size is the most common purchase dimension, accounting for 50.0% of product analysis.</p><p><strong>What to publish:</strong> Create landing pages featuring 5'x8' Brown/Beige Polypropylene rugs under $50.</p>
+          <div class="src-ref">📎 P2: Product Attribute Analysis</div>
+        </div></div>
+      </div>
+    </section>
+    
+    <section class="section">
+      <h2>🛒 Buyer Decision Factors</h2>
+      <div class="content-grid">
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Factor:</strong> UV &amp; Fade Resistance</p><p><strong>Why it matters:</strong> This is critical for sun exposure, ensuring excellent longevity against sun exposure.</p><p><strong>Content angle:</strong> Update product descriptions to explicitly mention UV stabilization and quick-drying capabilities.</p>
+          <div class="src-ref">📎 P2: Buyer Profile</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Factor:</strong> Water &amp; Moisture Resistance</p><p><strong>Why it matters:</strong> Buyers seek pieces that are quick-drying and durable against elements like moisture.</p><p><strong>Content angle:</strong> Target homeowners by emphasizing Polypropylene's traffic durability and quick-drying properties.</p>
+          <div class="src-ref">📎 P2: Buyer Profile</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Factor:</strong> Material suitability</p><p><strong>Why it matters:</strong> Polypropylene is dominant due to being highly durable, water-resistant, and affordable.</p><p><strong>Content angle:</strong> Market the total cost of ownership by highlighting low maintenance and long lifespan of Polypropylene.</p>
+          <div class="src-ref">📎 P2: Category Deep Dive</div>
+        </div></div>
+      </div>
+    </section>
+    
+    <section class="section">
+      <h2>💡 Content Ideas</h2>
+      <div class="content-grid">
+  <div class="content-card">
+    <div class="content-card-header">
+      <div class="type">Blog Guide</div>
+      <h4>Designing with Modern Desert Neutral Rugs</h4>
+    </div>
+    <div class="content-card-body">
+      <p>Learn how to anchor your patio using Sand/Beige/Brown flatweave options for a sophisticated, relaxed aesthetic.</p>
+      <div class="data-tag">📊 P2: Trending Micro-Segments + P3: Executive Summary</div>
+      <div class="keywords"><span class="keyword">Modern Desert Neutral</span><span class="keyword">Beige outdoor rug</span></div>
+    </div>
+  </div>
+  <div class="content-card">
+    <div class="content-card-header">
+      <div class="type">Buying Guide</div>
+      <h4>Durability Matters: Choosing UV-Resistant Outdoor Rugs</h4>
+    </div>
+    <div class="content-card-body">
+      <p>We guide you on selecting weather-resistant materials like Polypropylene to ensure long-lasting outdoor comfort.</p>
+      <div class="data-tag">📊 P2: Buyer Profile + P3: Side-by-Side Comparison</div>
+      <div class="keywords"><span class="keyword">UV resistant rug</span><span class="keyword">Polypropylene outdoor rug</span></div>
+    </div>
+  </div>
+  <div class="content-card">
+    <div class="content-card-header">
+      <div class="type">Landing Page</div>
+      <h4>Design Value Outdoor Rugs: $100-$250 Collection</h4>
+    </div>
+    <div class="content-card-body">
+      <p>Explore curated, high-design rugs that fill the competitive gap in the $100-$250 range.</p>
+      <div class="data-tag">📊 P2: Trending Micro-Segments + P3: Whitespace Analysis</div>
+      <div class="keywords"><span class="keyword">designer outdoor rug</span><span class="keyword">mid-range patio rug</span></div>
+    </div>
+  </div>
+  <div class="content-card">
+    <div class="content-card-header">
+      <div class="type">Blog Guide</div>
+      <h4>Quick Wins: 5'x8' Brown Polypropylene Rugs Under $50</h4>
+    </div>
+    <div class="content-card-body">
+      <p>A guide to capturing high volume with versatile, budget-friendly 5'x8' Brown Polypropylene options.</p>
+      <div class="data-tag">📊 P2: Demand Signals &amp; Recommendations</div>
+      <div class="keywords"><span class="keyword">5'x8' outdoor rug</span><span class="keyword">budget patio rug</span></div>
+    </div>
+  </div>
+  <div class="content-card">
+    <div class="content-card-header">
+      <div class="type">Email Series</div>
+      <h4>The Premium Patio: Entering the $300+ Segment</h4>
+    </div>
+    <div class="content-card-body">
+      <p>Discover how to elevate your outdoor space with high-quality collections above $300, a segment currently ignored by competitors.</p>
+      <div class="data-tag">📊 P3: Whitespace Analysis</div>
+      <div class="keywords"><span class="keyword">premium outdoor rug</span><span class="keyword">high AOV patio</span></div>
+    </div>
+  </div></div>
+    </section>
+    
+    <section class="section">
+      <h2>📱 Social Media Captions</h2>
+      <div class="social-grid">
+  <div class="social-post">
+    <div class="platform-badge ig">Instagram</div>
+    <p>Cozy up to the 'Modern Desert Neutral' vibe; our Sand/Beige/Brown rugs bring effortless, grounded style to any patio.</p>
+    <div class="hashtags">#CoastalRelaxed #OutdoorLiving</div>
+  </div>
+
+  <div class="social-post">
+    <div class="platform-badge ig">Instagram</div>
+    <p>Durability meets design—our high-rated rugs ensure your outdoor space stays beautiful, season after season.</p>
+    <div class="hashtags">#WayfairStyle #PatioDecor</div>
+  </div>
+
+  <div class="social-post">
+    <div class="platform-badge ig">Instagram</div>
+    <p>Find your perfect fit: 5'x8' is the most common size, perfect for balconies and small patios.</p>
+    <div class="hashtags">#SmallPatio #OutdoorRug</div>
+  </div>
+
+  <div class="social-post">
+    <div class="platform-badge pin">Pinterest</div>
+    <p><strong>Natural-Look Braided Rug in Honey Brown/Tan</strong></p>
+    <p>Perfect for patio season, capturing the 'Modern Desert Neutral' aesthetic.</p>
+  </div>
+
+  <div class="social-post">
+    <div class="platform-badge pin">Pinterest</div>
+    <p><strong>Neutral Beige Flatweave for Poolside</strong></p>
+    <p>A durable, weather-resistant option in neutral beige, taupe, and grey stripe variations.</p>
+  </div>
+
+  <div class="social-post">
+    <div class="platform-badge fb">Facebook</div>
+    <p>Ready to transform your patio? We focus on durable, weather-resistant materials like Polypropylene, ensuring your outdoor room is both beautiful and practical.</p>
+  </div>
+
+  <div class="social-post">
+    <div class="platform-badge tt">TikTok</div>
+    <p><strong>Hook:</strong> Stop buying flimsy plastic mats!</p>
+    <p>Showcase Polypropylene durability vs. low-cost utility mats, emphasizing UV resistance and quick-drying benefits.</p>
+  </div>
+</div>
+    </section>
+    
+    <section class="section">
+      <h2>🎯 Campaign Concepts</h2>
+      
+  <div class="campaign-card">
+    <h4>Campaign: "Design Value Mid-Range Launch"</h4>
+    <div class="tagline">"Design Depth, Not Just Low Cost"</div>
+    <p>Aggressively challenge Amazon's low-tier dominance by increasing SKU depth in the $100-$250 range with high-review, design-focused items.</p>
+    <div class="campaign-details">
+    <div class="campaign-detail">
+      <h5>Content Pillars</h5>
+      <p>Design Partnerships, Neutral Aesthetics</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Format</h5>
+      <p>Landing Page, Social Ads</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Competitive Angle</h5>
+      <p>Amazon is under-indexed in the $100-$250 bracket</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Seo Opportunity</h5>
+      <p>mid-range patio rug</p>
+    </div>
+  </div>
+  </div>
+  <div class="campaign-card">
+    <h4>Campaign: "Walmart Elevation Initiative"</h4>
+    <div class="tagline">"Beyond Budget Utility"</div>
+    <p>Introduce curated, high-design rugs priced between $100-$250 to fill Walmart's zero presence in this segment.</p>
+    <div class="campaign-details">
+    <div class="campaign-detail">
+      <h5>Content Pillars</h5>
+      <p>Quality, Design Sophistication</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Format</h5>
+      <p>Targeted Ads, Product Listings</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Competitive Angle</h5>
+      <p>Walmart relies on extreme low-price utility (Mainstays, SIXHOME)</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Seo Opportunity</h5>
+      <p>curated outdoor rug</p>
+    </div>
+  </div>
+  </div>
+  <div class="campaign-card">
+    <h4>Campaign: "Premium Segment Leadership"</h4>
+    <div class="tagline">"Elevate Beyond $248.99"</div>
+    <p>Develop and launch a distinct, high-quality collection above $300 to exploit the zero-competition gap across all retailers.</p>
+    <div class="campaign-details">
+    <div class="campaign-detail">
+      <h5>Content Pillars</h5>
+      <p>High AOV, Premium Materials</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Format</h5>
+      <p>Email Series, High-End Visuals</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Competitive Angle</h5>
+      <p>All retailers are notably absent in the premium ($300+) category</p>
+    </div>
+  
+    <div class="campaign-detail">
+      <h5>Seo Opportunity</h5>
+      <p>premium outdoor rug</p>
+    </div>
+  </div>
+  </div>
+    </section>
+    
+    <section class="section">
+      <h2>📧 Email Subject Lines</h2>
+      <div class="email-ideas">
+  <div class="email-subject">
+    <span class="icon">🌿</span>
+    <span class="subject-text">Your guide to durable, neutral outdoor rugs</span>
+    
+  </div>
+  <div class="email-subject">
+    <span class="icon">✨</span>
+    <span class="subject-text">Discover design value in the $100-$250 range</span>
+    
+  </div>
+  <div class="email-subject">
+    <span class="icon">☀️</span>
+    <span class="subject-text">UV-resistant rugs for year-round comfort</span>
+    
+  </div>
+  <div class="email-subject">
+    <span class="icon">🏡</span>
+    <span class="subject-text">Anchor your space with 5'x8' Brown/Beige neutrals</span>
+    
+  </div>
+  <div class="email-subject">
+    <span class="icon">💎</span>
+    <span class="subject-text">Ready to explore premium rugs above $300?</span>
+    
+  </div>
+  <div class="email-subject">
+    <span class="icon">✅</span>
+    <span class="subject-text">Expert tips for outdoor rug placement and drainage</span>
+    
+  </div></div>
+    </section>
+    
+    <section class="section">
+      <h2>⚔️ Competitive Content Angles</h2>
+      
+  <div class="competitive-angle">
+    <h4>Angle: "Design Sophistication"</h4>
+    <p><strong>Competitor Gap:</strong> Amazon and Walmart are heavily skewed toward low-cost plastic/polypropylene mats ($19.88 - $98.59).</p>
+    <p><strong>Wayfair Opportunity:</strong> Aggressively market design partnerships (e.g., Rifle Paper Co.) to justify the 4.65 / 5 stars and higher average price.</p>
+  </div>
+
+  <div class="competitive-angle">
+    <h4>Angle: "Mid-Range Value Capture"</h4>
+    <p><strong>Competitor Gap:</strong> Competitors have little presence in the $100-$250 range.</p>
+    <p><strong>Wayfair Opportunity:</strong> Launch $100-$250 'Design Value' SKU Clusters to defend against Amazon's price wars by emphasizing quality.</p>
+  </div>
+
+  <div class="competitive-angle">
+    <h4>Angle: "High Customer Confidence"</h4>
+    <p><strong>Competitor Gap:</strong> Amazon averages 4.43 / 5 stars across 10 rated products.</p>
+    <p><strong>Wayfair Opportunity:</strong> Leverage Wayfair's 4.65 / 5 stars to build trust and justify quality over purely utility features.</p>
+  </div>
+
+    </section>
+    
+    
+    <section class="section">
+      <h2>🗣️ Competitor Messaging Gaps</h2>
+      <div class="content-grid">
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Competitors emphasize:</strong> Competitors heavily feature low-cost plastic/polypropylene mats.</p><p><strong>Opening for Wayfair:</strong> They often neglect design depth and curated quality.</p><p><strong>Content angle:</strong> Aggressively market design partnerships like Rifle Paper Co. to differentiate from generic utility sellers.</p>
+          <div class="src-ref">📎 P3: Key Findings</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Competitors emphasize:</strong> Competitors focus on extreme low-price utility.</p><p><strong>Opening for Wayfair:</strong> They fail to capture the mid-to-high design value segment.</p><p><strong>Content angle:</strong> Leverage high-volume, highly-rated items like Lucidia at 4.7/5 stars to justify mid-to-high pricing.</p>
+          <div class="src-ref">📎 P3: Key Findings</div>
+        </div></div>
+        <div class="content-card"><div class="content-card-body">
+          
+          <p><strong>Competitors emphasize:</strong> Competitors emphasize functional features like Waterproof/Reversible.</p><p><strong>Opening for Wayfair:</strong> They do not always pair these features with sophisticated design narratives.</p><p><strong>Content angle:</strong> Ensure prominent display of practical features while showcasing the design sophistication of curated collections.</p>
+          <div class="src-ref">📎 P3: Strategic Implications</div>
+        </div></div>
+      </div>
+    </section>
+    
+    <section class="section">
+      <h2>📅 Recommended Content Priorities</h2>
+      
+  <div class="recommendation">
+    <div class="priority high">1</div>
+    <div class="recommendation-content">
+      <h4>Prioritize 'Modern Desert Neutral' Assortment</h4>
+      <p>This trend aligns with P2's Brown/Beige dominance and can be positioned using P3's design advantage over generic utility sellers.</p>
+    </div>
+  </div>
+  <div class="recommendation">
+    <div class="priority high">2</div>
+    <div class="recommendation-content">
+      <h4>Launch $100-$250 'Design Value' SKU Cluster</h4>
+      <p>This targets P3's $100-$250 whitespace gap while aligning with P2's preference for neutral, high-impact styles.</p>
+    </div>
+  </div>
+  <div class="recommendation">
+    <div class="priority medium">3</div>
+    <div class="recommendation-content">
+      <h4>Target Walmart Mid-Range ($100-$250)</h4>
+      <p>Introduce curated quality to fill P3's zero presence in the $100-$300 band, supporting P2's focus on durable, mid-range materials.</p>
+    </div>
+  </div>
+  <div class="recommendation">
+    <div class="priority medium">4</div>
+    <div class="recommendation-content">
+      <h4>Marketing: Durability &amp; Safety Focus</h4>
+      <p>Shift messaging to functional benefits like UV stabilization, addressing P2 buyer concerns while differentiating from Amazon's functional listings.</p>
+    </div>
+  </div>
+    </section>
+    
+    
+    <section class="section caveats">
+      <h2>⚠️ Conflicts & Caveats</h2>
+      <ul><li>The reports define "mid-range" differently: P2 uses $34-$72 (its price evidence comes from its own product sample), while P3 uses $100-$250 (the band where Amazon and Walmart coverage is thin). They are separate bands, and P2 does not show demand in the P3 band.</li><li>P2 market-size, growth and price-tier statistics describe: Global carpet &amp; rug market (parent category, not the segment itself). They are not outdoor rug figures.</li><li>The Scope of Research for P2 included Amazon (4 products), Instagram (9 posts), Pinterest (6 pins), and Industry blogs (10 articles).</li><li>P2's market size data for 2025, USD 10.30 billion, covers the parent category of the Global carpet &amp; rug market.</li><li>Walmart product data showed no pattern or color data in the product data.</li><li>The two reports use different sample sizes and retailers in their Scope of Research.</li><li>P2 includes a data point stating the market size for 2025 is USD 62.90 billion for the global carpet &amp; rug market.</li></ul>
+      
+    </section>
+    
+    <footer class="footer">
+      <div class="logo">Wayfair | AI Insights & Content Agent</div>
+      <p>Category: Outdoor Rug | Date: November 15, 2026</p>
+    </footer>
+  </div>
+</body>
+</html>

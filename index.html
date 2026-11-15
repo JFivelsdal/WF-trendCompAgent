@@ -1,303 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WF-trendCompAgent | Rug Market & Competitor Intelligence</title>
-  <style>
-    :root {
-      --bg: #f6f7fb;
-      --surface: #ffffff;
-      --text: #1e293b;
-      --muted: #64748b;
-      --primary: #7f187f;       /* Wayfair Plum */
-      --primary-light: #f5ebf5;
-      --secondary: #00857a;     /* Complementary Teal */
-      --secondary-light: #e6f4f2;
-      --border: #e2e8f0;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-
-    /* Top Branded Header */
-    .hero {
-      background: linear-gradient(135deg, #5c115c 0%, #7f187f 60%, #006b62 100%);
-      color: #ffffff;
-      padding: 3.5rem 1.5rem 4.5rem;
-      text-align: center;
-    }
-
-    .hero-inner {
-      max-width: 960px;
-      margin: 0 auto;
-    }
-
-    .eyebrow {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      padding: 0.3rem 0.85rem;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-    }
-
-    h1 {
-      font-size: clamp(1.6rem, 3vw, 2.35rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.65rem;
-    }
-
-    .subtitle {
-      color: rgba(255, 255, 255, 0.88);
-      font-size: 1.05rem;
-      max-width: 650px;
-      margin: 0 auto;
-    }
-
-    /* Main Content Container */
-    .container {
-      max-width: 1040px;
-      margin: -2.25rem auto 3rem;
-      padding: 0 1.5rem;
-    }
-
-    /* Filter Bar */
-    .toolbar {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.85rem 1.25rem;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
-      margin-bottom: 1.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .search-input {
-      width: 100%;
-      border: none;
-      font-size: 0.98rem;
-      color: var(--text);
-      outline: none;
-      background: transparent;
-    }
-
-    .search-input::placeholder {
-      color: #94a3b8;
-    }
-
-    /* Cards Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.75rem;
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 14px 28px -8px rgba(127, 24, 127, 0.14);
-      border-color: var(--primary);
-    }
-
-    .card-top {
-      margin-bottom: 1.5rem;
-    }
-
-    .badge-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 0.28rem 0.7rem;
-      border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-
-    .badge-trend {
-      background: var(--primary-light);
-      color: var(--primary);
-    }
-
-    .badge-comp {
-      background: var(--secondary-light);
-      color: var(--secondary);
-    }
-
-    .badge-dash {
-      background: #eef2ff;
-      color: #4338ca;
-    }
-
-    .category-tag {
-      font-size: 0.8rem;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    .card-title {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 0.5rem;
-      line-height: 1.35;
-    }
-
-    .card-desc {
-      font-size: 0.92rem;
-      color: var(--muted);
-    }
-
-    .card-footer {
-      padding-top: 1rem;
-      border-top: 1px solid #f1f5f9;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--primary);
-    }
-
-    .card:hover .arrow {
-      transform: translateX(4px);
-    }
-
-    .arrow {
-      transition: transform 0.2s ease;
-    }
-
-    footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.85rem;
-      padding-bottom: 2.5rem;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WF-trendCompAgent | Rug Market & Competitor Intelligence</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Wayfair Product Data &bull; AI Agent Outputs</span>
+    <h1>Rug Market and Competitor Analysis Agents</h1>
+    <p class="subtitle">Automated market trend reports, competitor benchmarking, and category dashboards, with the n8n workflows that build them.</p>
+  </div>
+</header>
 
-  <header class="hero">
-    <div class="hero-inner">
-      <span class="eyebrow">Wayfair Product Data &bull; AI Agent Outputs</span>
-      <h1>Rug Market and Competitor Analysis Agents</h1>
-      <p class="subtitle">Centralized intelligence hub for automated market trend reports, competitor benchmarking, and category dashboards.</p>
-    </div>
-  </header>
+<main class="container">
+  <div class="toolbar">
+    <svg width="18" height="18" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+    <input type="search" id="searchInput" class="search-input" placeholder="Search by category, agent, or keyword..." aria-label="Search reports and workflows">
+  </div>
 
-  <main class="container">
-    <div class="toolbar">
-      <svg width="18" height="18" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24">
-        <circle cx="11" cy="11" r="8"></circle>
-        <path d="M21 21l-4.35-4.35"></path>
-      </svg>
-      <input type="text" id="searchInput" class="search-input" placeholder="Search reports by category, agent type, or keyword...">
-    </div>
+  <div class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-tab="all" aria-selected="true">All<span class="count"></span></button>
+    <button class="tab" role="tab" data-tab="reports" aria-selected="false">Agent outputs<span class="count"></span></button>
+    <button class="tab" role="tab" data-tab="workflows" aria-selected="false">n8n workflows<span class="count"></span></button>
+  </div>
 
-    <div class="grid" id="reportGrid">
-      <!-- Card 1: Market Trend Output -->
-      <a href="Outdoor%20Rug%20Trend%20Report%20-%20FC.html" class="card">
-        <div class="card-top">
-          <div class="badge-row">
-            <span class="badge badge-trend">Market Trend</span>
-            <span class="category-tag">Outdoor Rugs</span>
-          </div>
-          <h2 class="card-title">Market Trend Output &mdash; Outdoor Rugs Category</h2>
-          <p class="card-desc">Emerging consumer preferences, seasonal style shifts, color palettes, and material trends across outdoor rugs.</p>
-        </div>
-        <div class="card-footer">
-          <span>View Full Report</span>
-          <span class="arrow">&rarr;</span>
-        </div>
-      </a>
+  <div class="how">
+    <strong>How it fits together:</strong> the Market Trend and Competitor Monitoring agents each produce a report. The Marketing Synthesis agent and the Dashboard Builder read both reports and produce the AI Insights report and the dashboard. Every output links to the workflow that built it, and every workflow links back to its output.
+  </div>
 
-      <!-- Card 2: Competitor Agent Output -->
-      <a href="Agent%20Wayfair%20Competitor%20Analysis%20Report%20-%20Outdoor%20Rug%20-%20FC.html" class="card">
-        <div class="card-top">
-          <div class="badge-row">
-            <span class="badge badge-comp">Competitor Analysis</span>
-            <span class="category-tag">Outdoor Rugs</span>
-          </div>
-          <h2 class="card-title">Competitor Agent Output &mdash; Outdoor Rugs Category</h2>
-          <p class="card-desc">Assortment benchmarking, pricing positioning, and key product gaps compared against rival retailers.</p>
-        </div>
-        <div class="card-footer">
-          <span>View Full Report</span>
-          <span class="arrow">&rarr;</span>
-        </div>
-      </a>
+  <section id="reportsSection">
+    <h2 class="section-title">Agent outputs</h2>
+    <div class="grid" id="reportGrid"></div>
+  </section>
+  <section id="workflowsSection">
+    <h2 class="section-title">n8n workflows</h2>
+    <div class="grid" id="workflowGrid"></div>
+  </section>
+  <p class="empty" id="emptyMsg" hidden>Nothing matches that search. Clear the box to see everything.</p>
+</main>
 
-      <!-- Card 3: Dashboard Output -->
-      <a href="Outdoor%20Rug%20-%20Category%20Intelligence%20Dashboard%20FC.html" class="card">
-        <div class="card-top">
-          <div class="badge-row">
-            <span class="badge badge-dash">Interactive Dashboard</span>
-            <span class="category-tag">Outdoor Rugs</span>
-          </div>
-          <h2 class="card-title">Dashboard Output &mdash; Outdoor Rugs Category</h2>
-          <p class="card-desc">Executive category intelligence view combining product performance metrics, trend signals, and competitor takeaways.</p>
-        </div>
-        <div class="card-footer">
-          <span>Open Dashboard</span>
-          <span class="arrow">&rarr;</span>
-        </div>
-      </a>
-    </div>
-  </main>
+<footer>WF-trendCompAgent &bull; Hosted on GitHub Pages</footer>
 
-  <footer>
-    WF-trendCompAgent &bull; Hosted on GitHub Pages
-  </footer>
+<script src="data.js"></script>
+<script>
+const BADGE = { 'Market Trend': 'badge-trend', 'Competitor Analysis': 'badge-comp', 'Dashboard': 'badge-dash', 'Content Strategy': 'badge-content', 'n8n Workflow': 'badge-wf' };
 
-  <script>
-    const searchInput = document.getElementById('searchInput');
-    const cards = document.querySelectorAll('.card');
+function card(item, type) {
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.href = (type === 'workflows' ? 'workflow.html?id=' : 'report.html?id=') + encodeURIComponent(item.id);
+  const cta = type === 'workflows' ? 'View workflow' : (item.kind === 'Dashboard' ? 'Open dashboard' : 'View report');
+  a.innerHTML =
+    '<div class="card-top"><div class="badge-row"><span class="badge"></span><span class="category-tag"></span></div>' +
+    '<h3 class="card-title"></h3><p class="card-desc"></p></div>' +
+    '<div class="card-footer"><span></span><span class="arrow">&rarr;</span></div>';
+  a.querySelector('.badge').className = 'badge ' + (BADGE[item.kind] || 'badge-trend');
+  a.querySelector('.badge').textContent = item.kind;
+  a.querySelector('.category-tag').textContent = item.category;
+  a.querySelector('.card-title').textContent = item.title;
+  a.querySelector('.card-desc').textContent = item.description;
+  a.querySelector('.card-footer span').textContent = cta;
+  return a;
+}
 
-    searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      cards.forEach(card => {
-        const content = card.textContent.toLowerCase();
-        card.style.display = content.includes(query) ? 'flex' : 'none';
-      });
+const grids = { reports: document.getElementById('reportGrid'), workflows: document.getElementById('workflowGrid') };
+['reports', 'workflows'].forEach(t => HUB[t].forEach(item => grids[t].appendChild(card(item, t))));
+
+let tab = 'all', query = '';
+function apply() {
+  let shown = 0;
+  ['reports', 'workflows'].forEach(t => {
+    let n = 0;
+    grids[t].querySelectorAll('.card').forEach(c => {
+      const hit = c.textContent.toLowerCase().includes(query);
+      c.style.display = hit ? 'flex' : 'none';
+      if (hit) n++;
     });
-  </script>
-
+    const sec = document.getElementById(t + 'Section');
+    const visible = (tab === 'all' || tab === t) && n > 0;
+    sec.hidden = !visible;
+    if (visible) shown += n;
+  });
+  document.getElementById('emptyMsg').hidden = shown > 0;
+}
+document.getElementById('searchInput').addEventListener('input', e => { query = e.target.value.toLowerCase().trim(); apply(); });
+document.querySelectorAll('.tab').forEach(b => {
+  const key = b.dataset.tab;
+  b.querySelector('.count').textContent = key === 'all' ? HUB.reports.length + HUB.workflows.length : HUB[key].length;
+  b.addEventListener('click', () => {
+    tab = key;
+    document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === b));
+    apply();
+  });
+});
+apply();
+</script>
 </body>
 </html>
