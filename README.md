@@ -15,9 +15,7 @@ reports/                your 4 HTML outputs
 workflows/              your 4 n8n JSON files
 ```
 
-## Put your files in these names
-
-GitHub Pages is case-sensitive and spaces/parentheses in names cause broken links, so rename the files like this:
+## Sample Output Reports and Associated Workflows
 
 | File | Report Type / Workflow |
 |---|---|
