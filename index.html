@@ -24,7 +24,7 @@
   <div class="tabs" role="tablist" id="tabs">
     <button class="tab" role="tab" data-tab="all" aria-selected="true">All<span class="count"></span></button>
     <button class="tab" role="tab" data-tab="reports" aria-selected="false">Agent outputs<span class="count"></span></button>
-    <button class="tab" role="tab" data-tab="workflows" aria-selected="false">n8n workflows<span class="count"></span></button>
+    <button class="tab" role="tab" data-tab="workflows" aria-selected="false">Agent workflows<span class="count"></span></button>
   </div>
 
   <div class="how">
@@ -36,7 +36,7 @@
     <div class="grid" id="reportGrid"></div>
   </section>
   <section id="workflowsSection">
-    <h2 class="section-title">n8n workflows</h2>
+    <h2 class="section-title">Agent workflows</h2>
     <div class="grid" id="workflowGrid"></div>
   </section>
   <p class="empty" id="emptyMsg" hidden>Nothing matches that search. Clear the box to see everything.</p>
@@ -46,7 +46,7 @@
 
 <script src="data.js"></script>
 <script>
-const BADGE = { 'Market Trend': 'badge-trend', 'Competitor Analysis': 'badge-comp', 'Dashboard': 'badge-dash', 'Content Strategy': 'badge-content', 'n8n Workflow': 'badge-wf' };
+const BADGE = { 'Market Trend': 'badge-trend', 'Competitor Analysis': 'badge-comp', 'Dashboard': 'badge-dash', 'Content Strategy': 'badge-content', 'Agent Workflow': 'badge-wf' };
 
 function card(item, type) {
   const a = document.createElement('a');
