@@ -1,0 +1,313 @@
+{
+  "name": "Project 4 - Marketing Synthesis Report Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "5f55423f-1c4e-4d6b-ab44-4e71ba6ce3f9",
+        "formTitle": "Project 4: Upload Your Reports",
+        "formDescription": "Upload your Project 2 (Market Analysis) and Project 3 (Competitor Analysis) HTML reports to generate a comprehensive content strategy.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Product Category",
+              "placeholder": "e.g., Area Rug, Table Lamp, Throw Pillow",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Focus Area",
+              "placeholder": "e.g., Natural & Sustainable, Modern Minimalist"
+            },
+            {
+              "fieldLabel": "P2 Market Analysis Report",
+              "fieldType": "file",
+              "acceptFileTypes": ".html",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "P3 Competitor Analysis Report",
+              "fieldType": "file",
+              "acceptFileTypes": ".html",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d0b9979f-7850-4d74-b679-050dd5930547",
+      "name": "Upload Form",
+      "webhookId": "5f55423f-1c4e-4d6b-ab44-4e71ba6ce3f9"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst form = item.json || {};\nconst binary = item.binary || {};\n\nconst category = form['Product Category'] || 'Area Rug';\nconst focus = form['Focus Area'] || '';\n\nlet p2Content = '';\nlet p3Content = '';\n\nconst binaryKeys = Object.keys(binary);\n\n// Identify P2 and P3 keys dynamically\nconst p2Key = binaryKeys.find(k => k.toUpperCase().includes('P2') || k.toUpperCase().includes('MARKET')) || binaryKeys[0];\nconst p3Key = binaryKeys.find(k => (k.toUpperCase().includes('P3') || k.toUpperCase().includes('COMPETITOR')) && k !== p2Key) || binaryKeys[1];\n\n// Safely pull the true binary buffer using n8n's official helper\nif (p2Key && binary[p2Key]) {\n  try {\n    const buf = await this.helpers.getBinaryDataBuffer(0, p2Key);\n    // Microsoft Edge HTML files use UTF-16 LE encoding; check for null bytes or BOM\n    p2Content = (buf.includes(0x00) || (buf.length > 1 && buf[0] === 0xFF)) \n      ? buf.toString('utf16le') \n      : buf.toString('utf8');\n  } catch (e) {\n    console.log(\"P2 buffer error:\", e.message);\n  }\n}\n\nif (p3Key && binary[p3Key]) {\n  try {\n    const buf = await this.helpers.getBinaryDataBuffer(0, p3Key);\n    p3Content = (buf.includes(0x00) || (buf.length > 1 && buf[0] === 0xFF)) \n      ? buf.toString('utf16le') \n      : buf.toString('utf8');\n  } catch (e) {\n    console.log(\"P3 buffer error:\", e.message);\n  }\n}\n\n// Convert HTML to a readable outline: headings become \"## ...\", table rows become \"a | b | c\"\nconst toOutline = (html) => String(html)\n  .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n  .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n  .replace(/<img[^>]*>/gi, '')\n  .replace(/<\\/tr>/gi, '\\n')\n  .replace(/<\\/t[dh]>/gi, ' | ')\n  .replace(/<h([1-4])[^>]*>/gi, (m, n) => '\\n' + '#'.repeat(Number(n)) + ' ')\n  .replace(/<\\/(p|li|div|h[1-4]|ul|table|section)>/gi, '\\n')\n  .replace(/<[^>]+>/g, '')\n  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')\n  .replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\").replace(/&nbsp;/g, ' ')\n  .replace(/[ \\t]+/g, ' ')\n  .replace(/\\n\\s*\\n+/g, '\\n')\n  .trim();\n\n// Limits are generous on purpose: typical P2 + P3 reports are about 6k tokens combined.\n// Keep llama-server context (-c) at roughly 16k per slot.\nconst P2_LIMIT = 14000;\nconst P3_LIMIT = 18000;\n\nconst p2Full = toOutline(p2Content);\nconst p3Full = toOutline(p3Content);\n\nreturn [{\n  json: {\n    category,\n    focus,\n    p2_content: p2Full.slice(0, P2_LIMIT),\n    p3_content: p3Full.slice(0, P3_LIMIT),\n    p2_chars: p2Full.length,\n    p3_chars: p3Full.length,\n    p2_truncated: p2Full.length > P2_LIMIT,\n    p3_truncated: p3Full.length > P3_LIMIT\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "564eb7a0-0b75-4fd1-8368-11099f52072a",
+      "name": "Extract Files"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merges the core response (Call LLM) with the extended response (Call LLM Extended).\n// A failure in the extended call never damages the core report.\nconst arr = v => (Array.isArray(v) ? v : []);\n\nconst FALLBACK = {\n  key_metrics: [],\n  data_foundation: { p2_insights: [], p3_insights: [] },\n  executive_summary: 'The model output could not be parsed, so no strategy was generated for this run. See the run notes at the bottom of this report.',\n  content_ideas: [],\n  social_captions: { instagram: [], pinterest: [], facebook: [], tiktok: [] },\n  campaigns: [],\n  email_subjects: [],\n  competitive_angles: [],\n  content_priorities: []\n};\n\nconst extractText = (raw) => {\n  if (!raw) return '';\n  if (raw.choices && raw.choices[0] && raw.choices[0].message && raw.choices[0].message.content) return raw.choices[0].message.content;\n  if (raw.message && raw.message.content) return raw.message.content;\n  if (raw.text) return raw.text;\n  if (raw.output) return raw.output;\n  return '';\n};\n\nconst parseJson = (text) => {\n  let s = String(text || '').replace(/```json/gi, '').replace(/```/g, '').trim();\n  const a = s.indexOf('{');\n  const b = s.lastIndexOf('}');\n  if (a === -1 || b <= a) return null;\n  s = s.substring(a, b + 1);\n  try { return JSON.parse(s); } catch (e) { /* try repair below */ }\n  try {\n    const repaired = s\n      .replace(/'([^'\\\\]*(?:\\\\.[^'\\\\]*)*)'/g, '\"$1\"')                       // single -> double quotes\n      .replace(/([{,]\\s*[\\r\\n\\t]*)([a-zA-Z0-9_]+)(\\s*[\\r\\n\\t]*):/g, '$1\"$2\"$3:') // quote bare keys\n      .replace(/,\\s*([}\\]])/g, '$1');                                        // trailing commas\n    return JSON.parse(repaired);\n  } catch (e) { return null; }\n};\n\nconst ex = $('Extract Files').first().json;\nconst coreRaw = $('Call LLM').first().json;\nconst extRaw = $input.first().json;\n\nconst coreParsed = parseJson(extractText(coreRaw));\nconst extParsed = parseJson(extractText(extRaw));\n\nconst notes = [];\nif (!coreParsed) notes.push('Core report: the model output could not be parsed, so placeholder content is shown. Re-run, or raise max_tokens and the llama-server context size.');\nif (!extParsed) notes.push('Extended analysis (price and whitespace, trends, buyer factors, messaging gaps) is unavailable: the second model call failed or returned invalid JSON.');\nif (ex.p2_truncated || ex.p3_truncated) notes.push('One or more reports were longer than the extraction limit and were truncated before analysis.');\nif ((ex.p2_chars || 0) < 200 || (ex.p3_chars || 0) < 200) notes.push('A report produced very little text. Check that the right HTML files were uploaded for P2 and P3.');\n\nconst core = coreParsed || FALLBACK;\nconst ext = extParsed || {};\n\nconst content = { ...core };\n['price_whitespace', 'trend_outlook', 'buyer_decision_factors', 'messaging_gaps', 'conflicts_caveats'].forEach(k => {\n  content[k] = arr(ext[k]);\n});\n\n// Normalize list fields so Build HTML never receives a non-array\ncontent.key_metrics = arr(content.key_metrics).filter(m => m && m.value !== undefined && m.value !== null && m.value !== '');\ncontent.content_ideas = arr(content.content_ideas);\ncontent.campaigns = arr(content.campaigns);\ncontent.email_subjects = arr(content.email_subjects);\ncontent.competitive_angles = arr(content.competitive_angles);\ncontent.content_priorities = arr(content.content_priorities);\nconst df = content.data_foundation && typeof content.data_foundation === 'object' ? content.data_foundation : {};\ncontent.data_foundation = { p2_insights: arr(df.p2_insights), p3_insights: arr(df.p3_insights) };\nconst sc = content.social_captions && typeof content.social_captions === 'object' ? content.social_captions : {};\ncontent.social_captions = { instagram: arr(sc.instagram), pinterest: arr(sc.pinterest), facebook: arr(sc.facebook), tiktok: arr(sc.tiktok) };\n\ncontent.run_notes = notes;\ncontent.category = content.category || ex.category || 'Outdoor Rug';\ncontent.focus = content.focus !== undefined ? content.focus : (ex.focus || '');\n\nreturn { json: content };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "8873cd55-0943-47cf-9baa-ba9fcaae6147",
+      "name": "Parse Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Grab data from Parse Content, but also look back at Extract Files for category/focus if needed\nconst c = $input.first().json;\n\n// Pull category/focus from upstream nodes if they aren't embedded in the LLM response\nconst category = c.category || $('Extract Files').first().json.category || 'Area Rug';\n\nconst focus = c.focus !== undefined ? c.focus : ($('Extract Files').first().json.focus || '');\n\n\n\nconst today = new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'});\nconst esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\n// Key Metrics Cards\nconst metrics = c.key_metrics || [];\nlet metricsHtml = metrics.map(m => `\n  <div class=\"insight-card\">\n    <div class=\"number\">${esc(m.value)}</div>\n    <div class=\"label\">${esc(m.label)}${m.source ? ' · ' + esc(m.source) : ''}</div>\n  </div>\n`).join('');\n\n// Data Foundation\nconst df = c.data_foundation || {};\nlet p2List = (df.p2_insights || []).map(i => `<li>${esc(i)}</li>`).join('');\nlet p3List = (df.p3_insights || []).map(i => `<li>${esc(i)}</li>`).join('');\n\n// Content Ideas\nconst ideas = c.content_ideas || [];\nlet ideasHtml = ideas.map(i => {\n  const kws = (i.seo_keywords || []).map(k => `<span class=\"keyword\">${esc(k)}</span>`).join('');\n  return `\n  <div class=\"content-card\">\n    <div class=\"content-card-header\">\n      <div class=\"type\">${esc(i.type)}</div>\n      <h4>${esc(i.title)}</h4>\n    </div>\n    <div class=\"content-card-body\">\n      <p>${esc(i.description)}</p>\n      <div class=\"data-tag\">📊 ${esc(i.data_connection)}</div>\n      ${kws ? `<div class=\"keywords\">${kws}</div>` : ''}\n    </div>\n  </div>`;\n}).join('');\n\n// Social Captions\nconst soc = c.social_captions || {};\nlet igHtml = (soc.instagram || []).map(p => `\n  <div class=\"social-post\">\n    <div class=\"platform-badge ig\">Instagram</div>\n    <p>${esc(p.caption)}</p>\n    <div class=\"hashtags\">${(p.hashtags || []).join(' ')}</div>\n  </div>\n`).join('');\nlet pinHtml = (soc.pinterest || []).map(p => `\n  <div class=\"social-post\">\n    <div class=\"platform-badge pin\">Pinterest</div>\n    <p><strong>${esc(p.title)}</strong></p>\n    <p>${esc(p.description)}</p>\n  </div>\n`).join('');\nlet fbHtml = (soc.facebook || []).map(p => `\n  <div class=\"social-post\">\n    <div class=\"platform-badge fb\">Facebook</div>\n    <p>${esc(p.post)}</p>\n  </div>\n`).join('');\nlet ttHtml = (soc.tiktok || []).map(p => `\n  <div class=\"social-post\">\n    <div class=\"platform-badge tt\">TikTok</div>\n    <p><strong>Hook:</strong> ${esc(p.hook)}</p>\n    <p>${esc(p.script)}</p>\n  </div>\n`).join('');\n\n// Campaigns\nconst camps = c.campaigns || [];\nlet campsHtml = camps.map(camp => {\n  const det = camp.details || {};\n  let detailsHtml = Object.entries(det).map(([k, v]) => `\n    <div class=\"campaign-detail\">\n      <h5>${k.replace(/_/g, ' ').replace(/\\b\\w/g, ch => ch.toUpperCase())}</h5>\n      <p>${esc(v)}</p>\n    </div>\n  `).join('');\n  return `\n  <div class=\"campaign-card\">\n    <h4>Campaign: \"${esc(camp.name)}\"</h4>\n    <div class=\"tagline\">\"${esc(camp.tagline)}\"</div>\n    <p>${esc(camp.description)}</p>\n    <div class=\"campaign-details\">${detailsHtml}</div>\n  </div>`;\n}).join('');\n\n// Email Subjects\nconst emails = c.email_subjects || [];\nlet emailsHtml = emails.map(e => {\n  const rateClass = e.open_rate === 'high' ? 'high' : 'medium';\n  return `\n  <div class=\"email-subject\">\n    <span class=\"icon\">${e.icon || '📧'}</span>\n    <span class=\"subject-text\">${esc(e.subject)}</span>\n    ${e.open_rate ? `<span class=\"open-rate ${rateClass}\">Est. ${e.open_rate === 'high' ? 'High' : 'Medium'} Open</span>` : ''}\n  </div>`;\n}).join('');\n\n// Competitive Angles\nconst angles = c.competitive_angles || [];\nlet anglesHtml = angles.map(a => `\n  <div class=\"competitive-angle\">\n    <h4>Angle: \"${esc(a.title)}\"</h4>\n    <p><strong>Competitor Gap:</strong> ${esc(a.competitor_gap)}</p>\n    <p><strong>Wayfair Opportunity:</strong> ${esc(a.wayfair_opportunity)}</p>\n  </div>\n`).join('');\n\n// Content Priorities\nconst priorities = c.content_priorities || [];\nlet prioritiesHtml = priorities.map(p => {\n  const prioClass = p.priority <= 2 ? 'high' : 'medium';\n  return `\n  <div class=\"recommendation\">\n    <div class=\"priority ${prioClass}\">${p.priority}</div>\n    <div class=\"recommendation-content\">\n      <h4>${esc(p.title)}</h4>\n      <p>${esc(p.rationale)}</p>\n    </div>\n  </div>`;\n}).join('');\n\n// ---- Extended sections (second LLM call) ----\nconst fieldRows = (r, fields) => fields\n  .map(([k, label]) => (r && r[k] ? `<p><strong>${label}:</strong> ${esc(r[k])}</p>` : ''))\n  .join('');\n\nconst cardGrid = (title, rows, fields, tagFn) => {\n  const list = Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object') : [];\n  if (!list.length) return '';\n  return `\n    <section class=\"section\">\n      <h2>${title}</h2>\n      <div class=\"content-grid\">${list.map(r => `\n        <div class=\"content-card\"><div class=\"content-card-body\">\n          ${tagFn ? tagFn(r) : ''}\n          ${fieldRows(r, fields)}\n          ${r.source_ref ? `<div class=\"src-ref\">📎 ${esc(r.source_ref)}</div>` : ''}\n        </div></div>`).join('')}\n      </div>\n    </section>`;\n};\n\nconst confTag = r => {\n  if (!r.confidence) return '';\n  const reported = String(r.confidence).toLowerCase().includes('reported');\n  return `<div class=\"data-tag ${reported ? 'conf-reported' : 'conf-inferred'}\">${reported ? 'Reported' : 'Inferred'}</div>`;\n};\n\nconst priceWhitespaceHtml = cardGrid('💲 Price & Whitespace Opportunities', c.price_whitespace,\n  [['opportunity', 'Opportunity'], ['price_band', 'Price band'], ['evidence', 'Evidence'], ['content_angle', 'Content angle']]);\nconst trendHtml = cardGrid('📈 Trend Outlook', c.trend_outlook,\n  [['trend', 'Trend'], ['evidence', 'Evidence'], ['content_implication', 'What to publish']], confTag);\nconst buyerHtml = cardGrid('🛒 Buyer Decision Factors', c.buyer_decision_factors,\n  [['factor', 'Factor'], ['why_it_matters', 'Why it matters'], ['content_angle', 'Content angle']]);\nconst messagingHtml = cardGrid('🗣️ Competitor Messaging Gaps', c.messaging_gaps,\n  [['competitor_claim', 'Competitors emphasize'], ['opening', 'Opening for Wayfair'], ['content_angle', 'Content angle']]);\n\nconst caveatList = (Array.isArray(c.conflicts_caveats) ? c.conflicts_caveats : []).filter(Boolean);\nconst runNotes = (Array.isArray(c.run_notes) ? c.run_notes : []).filter(Boolean);\nconst li = x => `<li>${esc(typeof x === 'string' ? x : JSON.stringify(x))}</li>`;\nconst caveatsHtml = (caveatList.length || runNotes.length) ? `\n    <section class=\"section caveats\">\n      <h2>⚠️ Conflicts & Caveats</h2>\n      ${caveatList.length ? `<ul>${caveatList.map(li).join('')}</ul>` : ''}\n      ${runNotes.length ? `<h4>Run notes</h4><ul>${runNotes.map(li).join('')}</ul>` : ''}\n    </section>` : '';\n\nconst html = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>AI Insights & Content Report | Wayfair ${esc(category)}</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }\n    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }\n    .header { background: linear-gradient(135deg, #7B2D8E 0%, #5E1A6E 100%); color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px; }\n    .header h1 { font-size: 2.2em; margin-bottom: 10px; }\n    .header .subtitle { font-size: 1.2em; opacity: 0.9; }\n    .header .meta { margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap; }\n    .header .meta-item { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; font-size: 0.9em; }\n    .section { background: white; border-radius: 12px; padding: 30px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }\n    .section h2 { color: #7B2D8E; font-size: 1.5em; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f0e6f4; }\n    .exec-summary { background: linear-gradient(135deg, #f8f4fa 0%, #fff 100%); border-left: 4px solid #7B2D8E; }\n    .exec-summary p { font-size: 1.05em; margin-bottom: 15px; white-space: pre-line; }\n    .key-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }\n    .insight-card { background: white; border: 1px solid #e0d4e6; border-radius: 8px; padding: 20px; text-align: center; }\n    .insight-card .number { font-size: 2.2em; font-weight: bold; color: #7B2D8E; }\n    .insight-card .label { font-size: 0.85em; color: #666; margin-top: 5px; }\n    .data-sources { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }\n    .data-source-card { background: #f8f9fa; border-radius: 8px; padding: 20px; }\n    .data-source-card h4 { color: #7B2D8E; margin-bottom: 12px; }\n    .data-source-card ul { list-style: none; padding-left: 0; }\n    .data-source-card li { padding: 8px 0; border-bottom: 1px solid #e9ecef; font-size: 0.95em; }\n    .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }\n    .content-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; }\n    .content-card-header { background: linear-gradient(135deg, #7B2D8E 0%, #9B4DB8 100%); color: white; padding: 15px 20px; }\n    .content-card-body { padding: 20px; }\n    .data-tag { display: inline-block; background: #f0e6f4; color: #7B2D8E; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; margin-bottom: 10px; }\n    .social-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }\n    .social-post { background: #f8f9fa; border-radius: 8px; padding: 15px; }\n    .platform-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; color: white; margin-bottom: 10px; }\n    .platform-badge.ig { background: linear-gradient(45deg, #f09433, #dc2743); }\n    .platform-badge.pin { background: #E60023; }\n    .platform-badge.fb { background: #1877F2; }\n    .platform-badge.tt { background: #000; }\n    .campaign-card { background: linear-gradient(135deg, #f8f4fa 0%, #fff 100%); border: 1px solid #e0d4e6; border-radius: 10px; padding: 25px; margin-bottom: 20px; }\n    .campaign-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }\n    .campaign-detail { background: white; padding: 15px; border-radius: 8px; }\n    .email-ideas { display: flex; flex-direction: column; gap: 10px; }\n    .email-subject { display: flex; align-items: center; gap: 15px; background: #f8f9fa; padding: 15px 20px; border-radius: 8px; }\n    .email-subject .open-rate { background: #e0f2e9; color: #059669; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; }\n    .competitive-angle { background: #f8f9fa; border-left: 4px solid #7B2D8E; padding: 20px; margin-bottom: 15px; }\n    .recommendation { display: flex; gap: 20px; margin-bottom: 15px; align-items: flex-start; }\n    .priority { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; background: #7B2D8E; }\n    .recommendation-content { flex: 1; background: #f8f9fa; padding: 15px 20px; border-radius: 8px; }\n    .footer { background: #5E1A6E; color: white; padding: 30px; border-radius: 12px; text-align: center; margin-top: 30px; }\n    .src-ref { font-size: 0.8em; color: #7B2D8E; margin-top: 10px; }\n    .data-tag.conf-reported { background: #e0f2e9; color: #059669; }\n    .data-tag.conf-inferred { background: #fff4d6; color: #9a6700; }\n    .content-card-body p { margin-bottom: 8px; }\n    .caveats { background: #fffaf0; border-left: 4px solid #f0a500; }\n    .caveats ul { padding-left: 20px; margin-bottom: 12px; }\n    .caveats li { margin-bottom: 6px; }\n    .caveats h4 { margin: 12px 0 6px; color: #9a6700; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <header class=\"header\">\n      <h1>AI Insights & Content Report</h1>\n      <p class=\"subtitle\">Wayfair ${esc(category)}${focus ? ' - ' + esc(focus) : ''}</p>\n      <div class=\"meta\">\n        <span class=\"meta-item\">📅 ${today}</span>\n        <span class=\"meta-item\">📊 ${metrics.length} Key Data Points</span>\n        <span class=\"meta-item\">💡 ${ideas.length} Content Ideas</span>\n        <span class=\"meta-item\">🎯 ${camps.length} Campaigns</span>\n      </div>\n    </header>\n    \n    <section class=\"section exec-summary\">\n      <h2>📋 Executive Summary</h2>\n      <p>${esc(c.executive_summary || '')}</p>\n      <div class=\"key-insights\">${metricsHtml}</div>\n    </section>\n    \n    <section class=\"section\">\n      <h2>📊 Data Foundation</h2>\n      <p>Key insights extracted from your reports:</p>\n      <div class=\"data-sources\">\n        <div class=\"data-source-card\">\n          <h4>📈 From Market Analysis (P2)</h4>\n          <ul>${p2List}</ul>\n        </div>\n        <div class=\"data-source-card\">\n          <h4>🔍 From Competitor Analysis (P3)</h4>\n          <ul>${p3List}</ul>\n        </div>\n      </div>\n    </section>\n    \n    ${priceWhitespaceHtml}\n    ${trendHtml}\n    ${buyerHtml}\n    \n    <section class=\"section\">\n      <h2>💡 Content Ideas</h2>\n      <div class=\"content-grid\">${ideasHtml}</div>\n    </section>\n    \n    <section class=\"section\">\n      <h2>📱 Social Media Captions</h2>\n      <div class=\"social-grid\">${igHtml}${pinHtml}${fbHtml}${ttHtml}</div>\n    </section>\n    \n    <section class=\"section\">\n      <h2>🎯 Campaign Concepts</h2>\n      ${campsHtml}\n    </section>\n    \n    <section class=\"section\">\n      <h2>📧 Email Subject Lines</h2>\n      <div class=\"email-ideas\">${emailsHtml}</div>\n    </section>\n    \n    <section class=\"section\">\n      <h2>⚔️ Competitive Content Angles</h2>\n      ${anglesHtml}\n    </section>\n    \n    ${messagingHtml}\n    \n    <section class=\"section\">\n      <h2>📅 Recommended Content Priorities</h2>\n      ${prioritiesHtml}\n    </section>\n    \n    ${caveatsHtml}\n    \n    <footer class=\"footer\">\n      <div class=\"logo\">Wayfair | AI Insights & Content Agent</div>\n      <p>Category: ${esc(category)}${focus ? ' | Focus: ' + esc(focus) : ''} | Date: ${today}</p>\n    </footer>\n  </div>\n</body>\n</html>`;\n\nreturn [{json: {html, category, focus}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "b4b50ee5-8a9b-4e66-af18-999778a307a3",
+      "name": "Build HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.first().json.html;\nconst cat = $input.first().json.category || 'Area Rug';\nconst ts = new Date().toISOString().split('T')[0];\nconst fileName = `Wayfair_${cat.replace(/\\s+/g, '_')}_Content_Strategy_${ts}.html`;\n\nreturn [{\n  json: { html, fileName },\n  binary: {\n    data: {\n      data: Buffer.from(html).toString('base64'),\n      mimeType: 'text/html',\n      fileName: fileName\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "8cbdaf3d-0d1d-486d-a7c6-1df08d3aae6c",
+      "name": "Download"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst systemPrompt = `You are a senior content strategist for Wayfair. Analyze the market (P2) and competitor (P3) reports below and write a content strategy report.\n\nBRAND VOICE & TONE:\n- For guides, strategy, and emails: helpful, friendly, expert. Speak like a knowledgeable friend (use \"you\" and \"we\"). Educational first, promotional second, with reassurance and confidence.\n- For social captions and campaigns: Wayfair's trend-aware, playful, cozy style. Lean into comfort, whimsy, and engagement-driven hooks rather than hard-selling.\n\nRULES:\n1. Output ONLY a valid JSON object starting with { and ending with }. No markdown code blocks, no commentary.\n2. Use ONLY facts, numbers, prices, ratings, and product or brand names that appear in the P2 and P3 reports below. Never invent statistics. If a number is not in the reports, do not use it. key_metrics may be an empty list.\n3. If a report's written conclusion conflicts with its own numbers, trust the numbers.\n4. If a report says \"[Data Not Provided]\", treat that data as unavailable.\n5. Every \"data_connection\" must name the report section it draws on, for example \"P3: Whitespace Analysis\" or \"P2: Key Segments\".\n6. Keep every text field to 1-3 sentences, except executive_summary.\n7. Item counts: key_metrics up to 4, p2_insights 4, p3_insights 4, content_ideas 5, instagram 3, pinterest 2, facebook 2, tiktok 2, campaigns 3, email_subjects 6, competitive_angles 3, content_priorities 4.\n\nCategory: ${item.category}\nFocus Area: ${item.focus || 'General'}\n\n=== MARKET ANALYSIS (P2) ===\n${item.p2_content}\n\n=== COMPETITOR ANALYSIS (P3) ===\n${item.p3_content}\n\nReturn this exact JSON structure, replacing every <...> placeholder with content grounded in the reports:\n{\n  \"key_metrics\": [\n    {\"value\": \"<number copied from a report>\", \"label\": \"<what it measures>\", \"source\": \"P2 or P3\"}\n  ],\n  \"data_foundation\": {\n    \"p2_insights\": [\"<specific market insight from P2>\"],\n    \"p3_insights\": [\"<specific competitor insight from P3>\"]\n  },\n  \"executive_summary\": \"<two short paragraphs separated by a blank line, connecting the market and competitor findings to Wayfair's content strategy>\",\n  \"content_ideas\": [\n    {\"type\": \"<Blog Guide, Buying Guide, Video, Email Series, or Landing Page>\", \"title\": \"<title for ${item.category}>\", \"description\": \"<what the piece covers>\", \"data_connection\": \"<P2 or P3: section name>\", \"seo_keywords\": [\"<keyword>\", \"<keyword>\"]}\n  ],\n  \"social_captions\": {\n    \"instagram\": [{\"caption\": \"<caption>\", \"hashtags\": [\"#<tag>\", \"#<tag>\"]}],\n    \"pinterest\": [{\"title\": \"<pin title>\", \"description\": \"<pin description>\"}],\n    \"facebook\": [{\"post\": \"<post text>\"}],\n    \"tiktok\": [{\"hook\": \"<opening line>\", \"script\": \"<short script outline>\"}]\n  },\n  \"campaigns\": [\n    {\n      \"name\": \"<campaign name>\",\n      \"tagline\": \"<tagline>\",\n      \"description\": \"<overview>\",\n      \"details\": {\n        \"content_pillars\": \"<pillars>\",\n        \"format\": \"<formats and channels>\",\n        \"competitive_angle\": \"<angle from P3>\",\n        \"seo_opportunity\": \"<search opportunity>\"\n      }\n    }\n  ],\n  \"email_subjects\": [\n    {\"icon\": \"<one emoji>\", \"subject\": \"<subject line>\"}\n  ],\n  \"competitive_angles\": [\n    {\"title\": \"<angle name>\", \"competitor_gap\": \"<gap seen in P3>\", \"wayfair_opportunity\": \"<how Wayfair content can use it>\"}\n  ],\n  \"content_priorities\": [\n    {\"priority\": 1, \"title\": \"<action>\", \"rationale\": \"<why, citing P2 or P3>\"}\n  ]\n}`;\n\nreturn [{\n  json: {\n    model: \"Nemotron-3.5-Bolt-E4B-DFlash-BF16.gguf\",\n    messages: [\n      { role: \"system\", content: systemPrompt },\n      { role: \"user\", content: \"Generate the JSON report now.\" }\n    ],\n    stream: false,\n    response_format: { type: 'json_object' },\n    chat_template_kwargs: { enable_thinking: false },\n    temperature: 0.3\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        0
+      ],
+      "id": "08e022e2-216e-45a2-9fa6-7a74efea39bc",
+      "name": "Prepare LLM Payload"
+    },
+    {
+      "parameters": {
+        "method": "=POST",
+        "url": "http://host.docker.internal:8081/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Connection",
+              "value": "close"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 999999
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        656,
+        0
+      ],
+      "id": "0c0dced3-2ec9-4f35-9ba2-56b6d8ddf271",
+      "name": "Call LLM"
+    },
+    {
+      "parameters": {
+        "html": "{{ $json.html }}"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1824,
+        0
+      ],
+      "id": "f3c257c1-7093-4afd-a73a-5f3ed808543e",
+      "name": "Preview HTML Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Second LLM call: extended analysis sections. Reads the reports straight from Extract Files.\nconst item = $('Extract Files').first().json;\n\nconst systemPrompt = `You are a senior content strategist for Wayfair. Using ONLY the market (P2) and competitor (P3) reports below, write the extended analysis sections.\n\nRULES:\n1. Output ONLY a valid JSON object starting with { and ending with }. No markdown code blocks, no commentary.\n2. Use ONLY facts, numbers, prices, ratings, and names that appear in the reports. Never invent statistics. If the reports do not support a section, return an empty list for it.\n3. If a report's written conclusion conflicts with its own numbers, trust the numbers.\n4. If a report says \"[Data Not Provided]\", treat that data as unavailable. Do not estimate it.\n5. Every item needs a \"source_ref\" naming the report and section it came from, for example \"P3: Whitespace Analysis\".\n6. For trend_outlook, \"confidence\" is \"reported\" when a report states it directly, or \"inferred\" when it is your own extrapolation.\n7. At most 3 items per section. Keep every text field to 1-2 sentences.\n8. conflicts_caveats: up to 5 short items. Include only what you can verify in the text: (a) the sample sizes stated in each report's Scope of Research, (b) places where P2 and P3 disagree, (c) places where a report's conclusion contradicts its own numbers, (d) any \"[Data Not Provided]\" fields. Omit any kind you do not find.\n\nCategory: ${item.category}\nFocus Area: ${item.focus || 'General'}\n\n=== MARKET ANALYSIS (P2) ===\n${item.p2_content}\n\n=== COMPETITOR ANALYSIS (P3) ===\n${item.p3_content}\n\nReturn this exact JSON structure, replacing every <...> placeholder:\n{\n  \"price_whitespace\": [\n    {\"opportunity\": \"<gap or opportunity>\", \"price_band\": \"<price range from the reports>\", \"evidence\": \"<numbers or findings from the reports>\", \"content_angle\": \"<content that could address it>\", \"source_ref\": \"<report: section>\"}\n  ],\n  \"trend_outlook\": [\n    {\"trend\": \"<rising style, material, or color>\", \"evidence\": \"<what the reports show>\", \"confidence\": \"reported or inferred\", \"content_implication\": \"<what to publish>\", \"source_ref\": \"<report: section>\"}\n  ],\n  \"buyer_decision_factors\": [\n    {\"factor\": \"<what buyers weigh>\", \"why_it_matters\": \"<explanation>\", \"content_angle\": \"<content that answers it>\", \"source_ref\": \"<report: section>\"}\n  ],\n  \"messaging_gaps\": [\n    {\"competitor_claim\": \"<what competitors emphasize>\", \"opening\": \"<what they leave unsaid>\", \"content_angle\": \"<how Wayfair content can fill it>\", \"source_ref\": \"<report: section>\"}\n  ],\n  \"conflicts_caveats\": [\"<short verified caveat>\"]\n}`;\n\nreturn [{\n  json: {\n    model: \"Nemotron-3.5-Bolt-E4B-DFlash-BF16.gguf\",\n    messages: [\n      { role: \"system\", content: systemPrompt },\n      { role: \"user\", content: \"Generate the JSON now.\" }\n    ],\n    stream: false,\n    response_format: { type: 'json_object' },\n    chat_template_kwargs: { enable_thinking: false },\n    max_tokens: 4000,\n    temperature: 0.3\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "b6248323-5eab-4525-8cf7-5fda3eca1c0d",
+      "name": "Prepare Payload Extended"
+    },
+    {
+      "parameters": {
+        "method": "=POST",
+        "url": "http://host.docker.internal:8081/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Connection",
+              "value": "close"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 999999
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "51c0bcb9-5aad-42ac-9c7e-df2d98923e30",
+      "name": "Call LLM Extended",
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Upload Form": {
+      "main": [
+        [
+          {
+            "node": "Extract Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Files": {
+      "main": [
+        [
+          {
+            "node": "Prepare LLM Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Content": {
+      "main": [
+        [
+          {
+            "node": "Build HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build HTML": {
+      "main": [
+        [
+          {
+            "node": "Download",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download": {
+      "main": [
+        [
+          {
+            "node": "Preview HTML Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LLM Payload": {
+      "main": [
+        [
+          {
+            "node": "Call LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call LLM": {
+      "main": [
+        [
+          {
+            "node": "Prepare Payload Extended",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Payload Extended": {
+      "main": [
+        [
+          {
+            "node": "Call LLM Extended",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call LLM Extended": {
+      "main": [
+        [
+          {
+            "node": "Parse Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9723cf61-7325-4d86-be4f-d56dd5691f9e",
+  "meta": {
+    "instanceId": "7745ef76bdb3b2d1703d1a9ca6edc9e485c1a84d7d87ca05c139e372b5d49870"
+  },
+  "nodeGroups": [],
+  "id": "cE1dHQFzSSFoHBCN",
+  "tags": []
+}
