@@ -2,19 +2,6 @@
 
 Wayfair rug market and competitor agents: HTML outputs plus the n8n workflows that build them. Hosted on GitHub Pages.
 
-## Files
-
-```
-index.html              hub page (cards, tabs, search)
-report.html             opens one HTML output inside the site frame
-workflow.html           draws one n8n workflow from its JSON
-workflow-render.js      the code that draws the workflow
-data.js                 the list of everything on the site (edit this to add items)
-style.css
-reports/                your 4 HTML outputs
-workflows/              your 4 n8n JSON files
-```
-
 ## Sample Output Reports and Associated Workflows
 
 | File | Report Type / Workflow |
